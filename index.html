@@ -3,91 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Oto Kita V2 - Real-time Tracking</title>
-
+    <title>Oto Kita V2 - Final</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #e5e3df; }
-        
+        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #222; }
         #map { height: 100vh; width: 100%; z-index: 1; }
-
-        /* Header Sopir */
-        #driver-header {
-            position: absolute; top: 0; left: 0; right: 0; z-index: 2000;
-            background: var(--success); color: white; padding: 12px;
-            display: none; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-
-        /* Panel Status */
-        .info-panel {
-            position: absolute; top: 70px; left: 15px; z-index: 1000;
-            background: white; padding: 10px; border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-size: 13px;
-        }
-
-        /* Box Login */
-        .admin-box {
-            position: absolute; top: 70px; right: 15px; z-index: 1000;
-            background: white; padding: 15px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 220px;
-            display: none;
-        }
-
+        #driver-header { position: absolute; top: 0; left: 0; right: 0; z-index: 2000; background: var(--success); color: white; padding: 12px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .info-panel { position: absolute; top: 70px; left: 15px; z-index: 1000; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 13px; }
+        .admin-box { position: absolute; top: 70px; right: 15px; z-index: 1000; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 220px; display: none; }
         input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .btn { border: none; padding: 10px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        .btn { border: none; padding: 12px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; text-align: center; }
         .btn-blue { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; width: 100%; }
         .btn-white { background: white; color: var(--danger); font-size: 11px; padding: 5px 10px; border-radius: 4px; }
-
-        /* Floating Controls */
         .float-controls { position: absolute; bottom: 30px; right: 15px; z-index: 1000; }
-        .circle-btn {
-            width: 55px; height: 55px; border-radius: 50%; background: white;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: none; cursor: pointer;
-        }
-
-        #wait-btn-container {
-            position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 1000;
-        }
-
-        .hidden { display: none !important; }
+        .circle-btn { width: 55px; height: 55px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; }
+        #wait-btn-container { position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 80%; text-align: center; }
     </style>
 </head>
 <body>
 
-    <!-- UI: Sopir Header -->
     <div id="driver-header">
-        <div><b>Sopir Aktif:</b> <span id="active-bus-name">-</span></div>
-        <button class="btn-white" onclick="doLogout()">LOGOUT / STOP</button>
+        <div><b>SOPIR:</b> <span id="active-bus-name">-</span></div>
+        <button class="btn-white" onclick="location.reload()">LOGOUT</button>
     </div>
 
-    <!-- UI: Info Box -->
     <div class="info-panel">
         <b style="color: var(--primary)">Oto Kita V2</b><br>
-        <small id="status-info">Menunggu GPS...</small>
+        <small id="status-info">Inisialisasi GPS...</small>
     </div>
 
-    <!-- UI: Login Trigger -->
     <div id="login-trigger" style="position: absolute; top: 15px; right: 15px; z-index: 1000;">
         <button class="btn btn-blue" onclick="toggleLoginBox()">Login Sopir</button>
     </div>
 
-    <!-- UI: Login Box -->
     <div id="login-box" class="admin-box">
         <h4 style="margin:0 0 10px">Mode Sopir</h4>
         <input type="text" id="input-bus-name" placeholder="Nama Bus (ex: Sinamar 01)">
         <button class="btn btn-success" onclick="doLoginDriver()">Mulai Narik</button>
     </div>
 
-    <!-- UI: Tombol Tunggu (Passenger) -->
     <div id="wait-btn-container">
-        <button id="btn-wait" class="btn btn-blue" onclick="iAmWaiting()">Saya Menunggu Bus</button>
+        <button id="btn-wait" class="btn btn-blue" style="width: 100%" onclick="iAmWaiting()">Saya Menunggu Bus</button>
     </div>
 
-    <!-- UI: Locate Button -->
     <div class="float-controls">
         <button class="circle-btn" onclick="goToMyLocation()">
             <svg width="28" height="28" viewBox="0 0 24 24"><path fill="#007bff" d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M3.05,13H1V11H3.05C3.5,6.83 6.83,3.5 11,3.05V1H13V3.05C17.17,3.5 20.5,6.83 20.95,11H23V13H20.95C20.5,17.17 17.17,20.5 13,20.95V23H11V20.95C6.83,20.5 3.5,17.17 3.05,13Z" /></svg>
@@ -96,19 +56,14 @@
 
     <div id="map"></div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // --- 1. CONFIG & INITIALIZATION ---
         const SUPABASE_URL = 'https://cgkgxqpfwvnsjknrocwa.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNna2d4cXBmd3Zuc2prbnJvY3dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NzEwOTMsImV4cCI6MjEwNDI0NzA5M30.2K37gB7p3xSjsAw6c1L3kwmtT5bgTJ4ggEDcDQEfblk'; // <-- GANTI INI
-        
-        // GUNAKAN NAMA BERBEDA AGAR TIDAK BENTROK
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNna2d4cXBmd3Zuc2prbnJvY3dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NzEwOTMsImV4cCI6MjEwNDI0NzA5M30.2K37gB7p3xSjsAw6c1L3kwmtT5bgTJ4ggEDcDQEfblk'; 
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let userRole = 'passenger';
         let myLatLng = null;
         let busMarkers = {};
         let passengerMarkers = {};
@@ -116,14 +71,12 @@
         let watchId = null;
         let wakeLock = null;
 
-        // Setup Map (Default Payakumbuh)
-        const map = L.map('map', { zoomControl: true }).setView([-0.22, 100.63], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        // Map Init
+        const map = L.map('map', { zoomControl: false }).setView([-0.22, 100.63], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        const busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', iconSize: [35, 35], iconAnchor: [17, 17] });
-        const waitIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2802/2802931.png', iconSize: [30, 30], iconAnchor: [15, 15] });
-
-        // --- 2. FUNCTIONS ---
+        const busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', iconSize: [35, 35] });
+        const waitIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2802/2802931.png', iconSize: [30, 30] });
 
         function toggleLoginBox() {
             const box = document.getElementById('login-box');
@@ -132,112 +85,74 @@
 
         function goToMyLocation() {
             if (myLatLng) map.flyTo(myLatLng, 16);
-            else map.locate({setView: true, maxZoom: 16});
+            else alert("GPS belum dapet lokasi lu, cuy!");
         }
 
         async function doLoginDriver() {
             const name = document.getElementById('input-bus-name').value;
-            if (!name) return alert("Nama Bus wajib diisi!");
+            if (!name) return alert("Isi nama bus!");
             
-            userRole = 'driver';
             document.getElementById('active-bus-name').innerText = name;
             document.getElementById('driver-header').style.display = 'flex';
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('login-trigger').style.display = 'none';
             document.getElementById('wait-btn-container').style.display = 'none';
             
-            startTracking();
-            setTimeout(() => map.invalidateSize(), 500);
-        }
-
-        function doLogout() {
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-            if (wakeLock) wakeLock.release();
-            window.location.reload(); 
-        }
-
-        async function startTracking() {
-            const busName = document.getElementById('input-bus-name').value;
-            if ('wakeLock' in navigator) {
-                try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
-            }
+            if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
 
             watchId = navigator.geolocation.watchPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
                 myLatLng = [latitude, longitude];
-                
-                // Update Posisi ke Supabase
-                await supabaseClient.from('tracking_bus').upsert({ 
-                    id: 1, // Testing ID 1
-                    nama_bus: busName, 
-                    lat: latitude, 
-                    lng: longitude, 
-                    last_update: new Date() 
-                });
-            }, null, { enableHighAccuracy: true });
+                await client.from('tracking_bus').upsert({ id: 1, nama_bus: name, lat: latitude, lng: longitude, last_update: new Date() });
+            }, (err) => console.error(err), { enableHighAccuracy: true });
+
+            setTimeout(() => map.invalidateSize(), 500);
         }
 
         async function iAmWaiting() {
-            if (!myLatLng) return alert("Sabar, GPS lagi nyari lokasi kamu...");
-            const { error } = await supabaseClient.from('passenger_waiting').insert({ 
-                lat: myLatLng.lat, lng: myLatLng.lng 
-            });
-            if (!error) alert("Sip! Lokasi kamu sudah muncul di peta sopir.");
+            if (!myLatLng) return alert("Tunggu GPS nemu lokasi lu...");
+            const { error } = await client.from('passenger_waiting').insert({ lat: myLatLng[0], lng: myLatLng[1] });
+            if (error) alert("Gagal kirim: " + error.message);
+            else alert("Lokasi lu udah muncul di peta sopir!");
         }
 
-        // --- 3. RENDERING ---
-
         function renderBus(bus) {
-            if (busMarkers[bus.id]) {
-                busMarkers[bus.id].setLatLng([bus.lat, bus.lng]);
-            } else {
-                busMarkers[bus.id] = L.marker([bus.lat, bus.lng], { icon: busIcon }).addTo(map).bindPopup(bus.nama_bus);
-            }
-            document.getElementById('status-info').innerText = "Bus: " + bus.nama_bus;
+            if (busMarkers[bus.id]) busMarkers[bus.id].setLatLng([bus.lat, bus.lng]);
+            else busMarkers[bus.id] = L.marker([bus.lat, bus.lng], { icon: busIcon }).addTo(map).bindPopup(bus.nama_bus);
+            document.getElementById('status-info').innerText = "Bus Aktif: " + bus.nama_bus;
         }
 
         function renderPassenger(p) {
-            if (!passengerMarkers[p.id]) {
-                passengerMarkers[p.id] = L.marker([p.lat, p.lng], { icon: waitIcon }).addTo(map).bindPopup("Penumpang Menunggu");
-            }
+            if (!passengerMarkers[p.id]) passengerMarkers[p.id] = L.marker([p.lat, p.lng], { icon: waitIcon }).addTo(map);
         }
 
-        // --- 4. GPS & REALTIME ---
+        // GPS Real-time (Always On)
+        navigator.geolocation.watchPosition((pos) => {
+            const { latitude, longitude } = pos.coords;
+            myLatLng = [latitude, longitude];
+            if (!myMarker) myMarker = L.circleMarker(myLatLng, { radius: 8, fillColor: '#007bff', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(map);
+            else myMarker.setLatLng(myLatLng);
+            document.getElementById('status-info').innerText = "GPS Terhubung";
+        }, (err) => {
+            document.getElementById('status-info').innerText = "GPS Error: " + err.message;
+        }, { enableHighAccuracy: true });
 
-        // Pantau Lokasi Saya (Titik Biru)
-        map.on('locationfound', (e) => {
-            myLatLng = e.latlng;
-            if (!myMarker) {
-                myMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: '#007bff', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(map);
-            } else {
-                myMarker.setLatLng(e.latlng);
-            }
-        });
-
-        // Loop GPS Penumpang
-        map.locate({setView: true, watch: true, maxZoom: 16});
-
-        // Supabase Listeners
-        supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tracking_bus' }, payload => {
+        // Supabase Realtime
+        client.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'tracking_bus' }, payload => {
             if (payload.new) renderBus(payload.new);
-        }).subscribe();
-
-        supabaseClient.channel('any2').on('postgres_changes', { event: '*', schema: 'public', table: 'passenger_waiting' }, payload => {
+        }).on('postgres_changes', { event: '*', schema: 'public', table: 'passenger_waiting' }, payload => {
             if (payload.new) renderPassenger(payload.new);
         }).subscribe();
 
-        // Load Initial Data
+        // Load Data Awal
         async function init() {
-            const buses = await supabaseClient.from('tracking_bus').select('*');
-            if (buses.data) buses.data.forEach(renderBus);
-            
-            const passengers = await supabaseClient.from('passenger_waiting').select('*');
-            if (passengers.data) passengers.data.forEach(renderPassenger);
+            const { data: buses } = await client.from('tracking_bus').select('*');
+            if (buses) buses.forEach(renderBus);
+            const { data: passengers } = await client.from('passenger_waiting').select('*');
+            if (passengers) passengers.forEach(renderPassenger);
+            map.invalidateSize();
         }
-
-        // Jalankan!
         init();
-
     </script>
 </body>
 </html>
