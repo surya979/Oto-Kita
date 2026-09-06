@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oto Kita - Tracking Real-time</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+
+        /* UI Penumpang (Kiri Atas) */
+        .info-panel {
+            position: absolute; top: 15px; left: 60px;
+            background: rgba(255, 255, 255, 0.9); padding: 12px; z-index: 1000;
+            border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-width: 150px;
+        }
+
+        /* Tombol Login/Menu (Kanan Atas) */
+        .top-right-menu {
+            position: absolute; top: 15px; right: 15px; z-index: 1000;
+            display: flex; flex-direction: column; align-items: flex-end;
+        }
+
+        /* Tombol Show My Location (Kanan Bawah) */
+        .locate-btn {
+            position: absolute; bottom: 30px; right: 20px; z-index: 1000;
+            background: white; border: none; width: 50px; height: 50px;
+            border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: #007bff;
+        }
+
+        .btn-action {
+            background: #007bff; color: white; border: none; padding: 12px 20px;
+            border-radius: 30px; cursor: pointer; font-weight: bold; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.3s;
+        }
+
+        .admin-box {
+            background: white; padding: 20px; border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 250px;
+            display: none; margin-top: 10px;
+        }
+
+        input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .driver-active { background: #28a745 !important; }
+    </style>
+</head>
+<body>
+
+    <div class="info-panel">
+        <b style="color: #007bff;">Oto Kita</b><br>
+        <small id="status-text">Mencari bus terdekat...</small>
+    </div>
+
+    <div class="top-right-menu">
+        <button id="main-btn" class="btn-action" onclick="toggleAdminBox()">Login Sopir</button>
+        
+        <div id="login-form" class="admin-box">
+            <h3 style="margin:0">Sopir</h3>
+            <input type="text" id="bus-name" placeholder="Nama Bus">
+            <button class="btn-action" style="width:100%; background:#28a745" onclick="doLogin()">Masuk</button>
+        </div>
+
+        <div id="driver-control" class="admin-box">
+            <h3 id="driver-title" style="margin:0">Sinamar</h3>
+            <p id="tracking-status" style="font-size: 13px; color: #666;">Status: Siap kirim lokasi</p>
+            <button id="btn-track" class="btn-action" style="width:100%; background:#28a745" onclick="toggleTracking()">Mulai Narik</button>
+            <button class="btn-action" style="width:100%; background:#6c757d; margin-top:10px" onclick="doLogout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Tombol Show My Location -->
+    <button class="locate-btn" onclick="goToMyLocation()" title="Posisi Saya">
+        🎯
+    </button>
+
+    <div id="map"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        const SUPABASE_URL = 'https://cgkgxqpfwvnsjknrocwa.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNna2d4cXBmd3Zuc2prbnJvY3dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NzEwOTMsImV4cCI6MjEwNDI0NzA5M30.2K37gB7p3xSjsAw6c1L3kwmtT5bgTJ4ggEDcDQEfblk'; 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let userRole = 'passenger';
+        let isTracking = false;
+        let watchId = null;
+        let busMarkers = {};
+        let myPosMarker = null;
+        let myLatLng = null;
+        let wakeLock = null;
+
+        const map = L.map('map', { zoomControl: false }).setView([-0.300, 100.370], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        const busIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
+            iconSize: [40, 40], iconAnchor: [20, 20]
+        });
+
+        // --- FUNGSI NAVIGASI ---
+        function goToMyLocation() {
+            if (myLatLng) {
+                map.flyTo(myLatLng, 16);
+            } else {
+                alert("Mencari lokasi kamu...");
+            }
+        }
+
+        // --- WAKE LOCK (BIAR HP GAK MATI) ---
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock Aktif: Layar nggak bakal mati!');
+                }
+            } catch (err) {
+                console.log('Wake Lock Gagal:', err.message);
+            }
+        }
+
+        // --- LOGIKA UI ---
+        function toggleAdminBox() {
+            const box = (userRole === 'passenger') ? 'login-form' : 'driver-control';
+            const el = document.getElementById(box);
+            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function doLogin() {
+            const name = document.getElementById('bus-name').value;
+            if(!name) return alert("Isi nama bus!");
+            userRole = 'driver';
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('driver-control').style.display = 'block';
+            document.getElementById('main-btn').innerHTML = "Mode Sopir";
+            document.getElementById('main-btn').className = "btn-action driver-active";
+            document.getElementById('driver-title').innerHTML = name;
+        }
+
+        function doLogout() {
+            if(isTracking) toggleTracking();
+            userRole = 'passenger';
+            document.getElementById('driver-control').style.display = 'none';
+            document.getElementById('main-btn').innerHTML = "Login Sopir";
+            document.getElementById('main-btn').className = "btn-action";
+        }
+
+        // --- LOGIKA SOPIR ---
+        async function toggleTracking() {
+            const btn = document.getElementById('btn-track');
+            const status = document.getElementById('tracking-status');
+            const busName = document.getElementById('bus-name').value;
+
+            if (!isTracking) {
+                isTracking = true;
+                btn.innerHTML = "Berhenti"; btn.style.background = "#dc3545";
+                status.innerHTML = "Status: Tracking Aktif...";
+                
+                await requestWakeLock(); // Aktifkan penahan layar
+
+                watchId = navigator.geolocation.watchPosition(async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    myLatLng = [latitude, longitude];
+                    updateMyMarker(latitude, longitude);
+
+                    await supabaseClient.from('tracking_bus').upsert({ 
+                        id: 1, nama_bus: busName, lat: latitude, lng: longitude, last_update: new Date()
+                    });
+                }, (err) => console.error(err), { enableHighAccuracy: true });
+            } else {
+                isTracking = false;
+                navigator.geolocation.clearWatch(watchId);
+                if (wakeLock) wakeLock.release(); // Matikan penahan layar
+                btn.innerHTML = "Mulai Narik"; btn.style.background = "#28a745";
+                status.innerHTML = "Status: Berhenti";
+            }
+        }
+
+        // --- LOGIKA PENUMPANG ---
+        function updateMyMarker(lat, lng) {
+            myLatLng = [lat, lng];
+            if(!myPosMarker) {
+                myPosMarker = L.circleMarker([lat, lng], {radius: 8, fillColor: "#3388ff", color: "white", weight: 2, opacity: 1, fillOpacity: 0.8}).addTo(map);
+            } else {
+                myPosMarker.setLatLng([lat, lng]);
+            }
+        }
+
+        function updateBusMarker(data) {
+            if (busMarkers[data.id]) {
+                busMarkers[data.id].setLatLng([data.lat, data.lng]);
+            } else {
+                busMarkers[data.id] = L.marker([data.lat, data.lng], {icon: busIcon}).addTo(map).bindPopup(data.nama_bus);
+            }
+            document.getElementById('status-text').innerHTML = "Bus: " + data.nama_bus;
+        }
+
+        // Tracking Penumpang (Berjalan Terus)
+        navigator.geolocation.watchPosition((pos) => {
+            updateMyMarker(pos.coords.latitude, pos.coords.longitude);
+        }, (err) => console.log(err), { enableHighAccuracy: true });
+
+        // Supabase Realtime
+        supabaseClient.channel('public:tracking_bus').on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'tracking_bus' }, 
+            payload => updateBusMarker(payload.new)
+        ).subscribe();
+
+        async function init() {
+            const { data } = await supabaseClient.from('tracking_bus').select('*');
+            if (data) data.forEach(updateBusMarker);
+        }
+        init();
+    </script>
+</body>
+</html>
