@@ -55,8 +55,8 @@
             <div>
                 <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">Tampilan Peta</h3>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="changeBasemap('osm')" id="btn-osm" class="basemap-card active p-2 border rounded-lg text-center font-bold text-[10px]">OSM</button>
-                    <button onclick="changeBasemap('satelit')" id="btn-satelit" class="basemap-card p-2 border rounded-lg text-center font-bold text-[10px]">SATELIT</button>
+                    <button onclick="changeBasemap('osm')" id="btn-osm" class="basemap-card active p-2 border rounded-lg text-center font-bold text-[10px]">Google</button>
+                    <button onclick="changeBasemap('satelit')" id="btn-satelit" class="basemap-card p-2 border rounded-lg text-center font-bold text-[10px]"> Hybrid</button>
                 </div>
             </div>
         </div>
@@ -95,12 +95,14 @@
         // --- SMART FOLLOW VARIABLE ---
         let isFollowing = true; 
 
-        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OSM' });
-        const satelit = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
+        // Google Streets
+        const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {maxZoom: 20,subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],attribution: '© Google Maps'});
+        // Google Hybrid (Satelit + Jalan)
+        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {maxZoom: 20,subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],attribution: '© Google Maps'});
 
         const map = L.map('map', { 
             zoomControl: false, 
-            layers: [osm], 
+            layers: [googleStreets], 
             tap: false 
         }).setView([-0.22, 100.63], 13);
 
@@ -112,7 +114,7 @@
             console.log("Auto-follow OFF");
         });
 
-        const baseMaps = { "osm": osm, "satelit": satelit };
+        const baseMaps = { "osm": googleStreets, "satelit": googleHybrid };
         const busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', iconSize: [35, 35], iconAnchor: [17, 17] });
         const waitIcon = L.icon({ iconUrl: 'favicon-32x32.png', iconSize: [24, 24], iconAnchor: [12, 12] });
 
