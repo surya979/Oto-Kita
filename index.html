@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Oto Kita V11.1 - Fixed & Analytics</title>
+    <title>Oto Kita V12 - Ultimate Sync</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -26,6 +26,7 @@
 </head>
 <body class="bg-gray-50 overflow-hidden h-screen-fix">
 
+    <!-- HEADER -->
     <header class="h-16 bg-slate-900/95 backdrop-blur-sm text-white flex items-center justify-between px-4 z-[2000] fixed top-0 w-full shadow-lg">
         <div class="flex items-center gap-3">
             <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-800 rounded-lg"><i data-lucide="menu" class="w-6 h-6"></i></button>
@@ -37,10 +38,11 @@
                 <span class="text-sm font-medium" id="display-name">Sopir</span>
                 <button onclick="doLogout()" class="ml-1 p-1 text-red-400"><i data-lucide="log-out" class="w-4 h-4"></i></button>
             </div>
-            <button id="login-btn" onclick="toggleLoginModal()" class="py-1.5 px-4 bg-blue-600 rounded-full text-sm font-bold">Sopir</button>
+            <button id="login-btn" onclick="toggleLoginModal()" class="py-1.5 px-4 bg-blue-600 rounded-full text-sm font-bold transition">Sopir</button>
         </div>
     </header>
 
+    <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar-transition fixed top-16 left-0 w-[70vw] max-w-[240px] h-[calc(100%-64px)] bg-white/95 backdrop-blur-md border-r border-gray-200 shadow-2xl translate-x-0">
         <div class="p-4 space-y-6">
             <div>
@@ -63,38 +65,38 @@
 
     <div id="map"></div>
 
-    <!-- THUMBNAIL INFO CARD -->
+    <!-- BOTTOM SHEET INFO -->
     <div id="bus-info-card" class="fixed bottom-0 left-0 right-0 p-4 translate-y-full">
         <div class="bg-white rounded-t-3xl shadow-2xl max-w-md mx-auto p-6">
             <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4"></div>
             <div class="flex justify-between items-start mb-4 text-slate-800">
                 <div>
                     <h2 id="card-bus-name" class="text-2xl font-bold">Nama Bus</h2>
-                    <p class="text-green-500 text-sm font-semibold">● Live (Snapped)</p>
+                    <p class="text-green-500 text-sm font-semibold flex items-center gap-1">● Live (Snapped)</p>
                 </div>
                 <button onclick="closeBusCard()" class="p-2 bg-gray-100 rounded-full"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
             </div>
             <div class="grid grid-cols-3 gap-2 border-t pt-4 text-center">
-                <div><p class="text-[10px] text-gray-400 font-bold uppercase">Jarak</p><p id="card-dist" class="font-bold text-blue-600">--</p></div>
-                <div><p class="text-[10px] text-gray-400 font-bold uppercase">Waktu</p><p id="card-eta" class="font-bold text-blue-600">--</p></div>
-                <div><p class="text-[10px] text-gray-400 font-bold uppercase">Laju</p><p id="card-speed" class="font-bold text-blue-600">--</p></div>
+                <div><p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Jarak</p><p id="card-dist" class="font-bold text-blue-600">--</p></div>
+                <div><p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Waktu</p><p id="card-eta" class="font-bold text-blue-600">--</p></div>
+                <div><p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Laju</p><p id="card-speed" class="font-bold text-blue-600">--</p></div>
             </div>
         </div>
     </div>
 
-    <!-- Right Bottom Controls -->
+    <!-- FLOAT BUTTON LOCATE -->
     <div class="absolute bottom-8 right-6 z-[1000] flex flex-col gap-3">
         <button onclick="goToMyLocation()" class="w-14 h-14 bg-white rounded-full shadow-2xl flex items-center justify-center border border-gray-100 text-blue-600 hover:scale-110 active:scale-95 transition">
             <i data-lucide="crosshair" class="w-7 h-7"></i>
         </button>
     </div>
 
-    <!-- LOGIN MODAL -->
+    <!-- MODAL LOGIN -->
     <div id="login-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl text-slate-800">
             <h2 class="text-xl font-bold mb-4">Login Sopir</h2>
-            <input type="text" id="bus-user-input" placeholder="Username" class="w-full p-3 border rounded-xl mb-2 outline-none">
-            <input type="password" id="bus-pass-input" placeholder="Password" class="w-full p-3 border rounded-xl mb-4 outline-none">
+            <input type="text" id="bus-user-input" placeholder="Username" class="w-full p-3 border rounded-xl mb-2 outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="password" id="bus-pass-input" placeholder="Password" class="w-full p-3 border rounded-xl mb-4 outline-none focus:ring-2 focus:ring-blue-500">
             <div class="flex gap-2">
                 <button onclick="toggleLoginModal()" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold">Batal</button>
                 <button onclick="processLogin()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold">Masuk</button>
@@ -106,16 +108,17 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // FIXED KEY (Menghapus kata "key" di depan)
+        // --- CONFIG & DB ---
         const SUPABASE_URL = 'https://cgkgxqpfwvnsjknrocwa.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNna2d4cXBmd3Zuc2prbnJvY3dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NzEwOTMsImV4cCI6MjEwNDI0NzA5M30.2K37gB7p3xSjsAw6c1L3kwmtT5bgTJ4ggEDcDQEfblk'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let myLatLng = null, busMarkers = {}, passengerMarkers = {}, myMarker = null, watchId = null, wakeLock = null;
-        let isFollowing = true;
+        let isFollowing = true; // SMART FOLLOW STATE
         let lastPos = null, lastTime = null, speedHistory = [];
         let passengerData = [];
-
+        let pickupTimers = {}; // Object to track pickup 1-min timers
+        let userRole = 'passenger';
         // MAPS
         const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {maxZoom: 20,subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],attribution: '© Google'});
         const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {maxZoom: 20,subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],attribution: '© Google'});
@@ -123,6 +126,7 @@
         const map = L.map('map', { zoomControl: false, layers: [googleStreets], tap: false }).setView([-0.22, 100.63], 13);
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
+        // DETECT MANUAL EXPLORE
         map.on('dragstart', () => { isFollowing = false; closeBusCard(); });
 
         const baseMaps = { "osm": googleStreets, "satelit": googleHybrid };
@@ -141,10 +145,11 @@
                 if (data.waypoints && data.waypoints.length > 0) {
                     return [data.waypoints[0].location[1], data.waypoints[0].location[0]];
                 }
-            } catch (e) { console.warn("OSRM Down, using raw GPS"); }
+            } catch (e) { console.warn("OSRM Down"); }
             return [lat, lng];
         }
 
+        // --- UI LOGIC ---
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         function toggleLoginModal() { document.getElementById('login-modal').classList.toggle('hidden'); }
         function changeBasemap(key) {
@@ -155,48 +160,93 @@
         }
 
         async function processLogin() {
-            const user = document.getElementById('bus-user-input').value;
-            const pass = document.getElementById('bus-pass-input').value;
+            const userInput = document.getElementById('bus-user-input').value.trim();
+            const passInput = document.getElementById('bus-pass-input').value.trim();   
             
-            // FEEDBACK: Beri tahu sedang loading
-            document.getElementById('display-name').innerText = "Checking...";
-            
-            const { data, error } = await supabaseClient.from('bus_accounts').select('*').eq('username', user).eq('password', pass).single();
-            
+            // 2. Query ke tabel bus_accounts
+            const { data, error } = await supabaseClient
+                .from('bus_accounts')
+                .select('*')
+                .eq('username', userInput) // Mencari yang persis sama (Case Sensitive)
+                .eq('password', passInput)
+                .single();
+
+            if (error) {
+                console.error("Detail Error:", error);
+                alert("Login gagal! Pastikan Username dan Password benar.");
+                return;
+            }
+
             if (data) {
+                // --- SET ROLE JADI DRIVER ---
+                userRole = 'driver'; 
+
+                // LOGIN BERHASIL
                 document.getElementById('login-btn').classList.add('hidden');
                 document.getElementById('user-info').classList.remove('hidden');
-                document.getElementById('display-name').innerText = user;
+        
+                // Gunakan 'nama_bus' asli dari database biar rapi di UI
+                document.getElementById('display-name').innerText = data.nama_bus;
+        
                 toggleLoginModal();
-                startDriverTracking(user);
-            } else {
-                alert("Login gagal! Cek Username/Password atau koneksi internet.");
-                document.getElementById('display-name').innerText = "Sopir";
+        
+                // Jalankan tracking pake nama bus asli dari DB
+                startDriverTracking(data.nama_bus);
+                
+                // Hapus marker biru kalau masih nempel
+                if (myMarker) {
+                    map.removeLayer(myMarker);
+                    myMarker = null;
+                }
+                 
+                alert("Selamat datang, " + data.nama_bus + "!");
             }
         }
 
-        function doLogout() { window.location.reload(); }
+        function doLogout() { 
+            userRole = 'passenger'; // Balikin status jadi penumpang pas logout
+            window.location.reload(); 
+        }
 
         function goToMyLocation() {
-            isFollowing = true;
+            isFollowing = true; // RE-ENABLE SMART FOLLOW
             if (myLatLng) map.flyTo(myLatLng, 17);
             else map.locate({setView: true, maxZoom: 17});
         }
 
+        // --- CORE LOGIC ---
         async function startDriverTracking(name) {
             if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
             watchId = navigator.geolocation.watchPosition(async (pos) => {
                 const lat = pos.coords.latitude, lng = pos.coords.longitude;
                 const speed = calculateSpeed(pos);
+                myLatLng = [lat, lng];
                 
+                if (isFollowing) map.panTo(myLatLng);
+
+                // --- LOGIKA PICKUP 3 MENIT ---
                 passengerData.forEach(async (p) => {
-                    if (!p.is_picked_up && L.latLng([lat, lng]).distanceTo([p.lat, p.lng]) < 30) {
-                        await supabaseClient.from('passenger_waiting').update({ is_picked_up: true }).eq('id', p.id);
+                    if (!p.is_picked_up) {
+                        const dist = L.latLng([lat, lng]).distanceTo([p.lat, p.lng]);
+                        if (dist < 25) {
+                            if (!pickupTimers[p.id]) {
+                                console.log("Mulai timer 1 menit untuk penumpang: ", p.id);
+                                pickupTimers[p.id] = setTimeout(async () => {
+                                    await supabaseClient.from('passenger_waiting').update({ is_picked_up: true }).eq('id', p.id);
+                                    delete pickupTimers[p.id];
+                                }, 60000); // 60 detik = 1 menit
+                            }
+                        } else {
+                            if (pickupTimers[p.id]) {
+                                clearTimeout(pickupTimers[p.id]);
+                                delete pickupTimers[p.id];
+                            }
+                        }
                     }
                 });
 
                 await supabaseClient.from('tracking_bus').upsert({ id: 1, nama_bus: name, lat: lat, lng: lng, speed: speed, last_update: new Date() });
-            }, (err) => console.error("GPS Error:", err), { enableHighAccuracy: true });
+            }, null, { enableHighAccuracy: true });
         }
 
         function calculateSpeed(pos) {
@@ -215,19 +265,17 @@
 
         async function renderBus(bus) {
             const snappedCoords = await snapToRoad(bus.lat, bus.lng);
-            if (busMarkers[bus.id]) busMarkers[bus.id].setLatLng(snappedCoords);
-            else {
+            if (busMarkers[bus.id]) {
+                busMarkers[bus.id].setLatLng(snappedCoords);
+            } else {
                 busMarkers[bus.id] = L.marker(snappedCoords, { icon: busIcon }).addTo(map);
                 busMarkers[bus.id].on('click', () => openBusCard(bus));
             }
             if (!document.getElementById('bus-info-card').classList.contains('translate-y-full')) updateCardInfo(bus);
         }
 
-        function openBusCard(bus) {
-            isFollowing = false;
-            updateCardInfo(bus);
-            document.getElementById('bus-info-card').classList.remove('translate-y-full');
-        }
+        function openBusCard(bus) { isFollowing = false; updateCardInfo(bus); document.getElementById('bus-info-card').classList.remove('translate-y-full'); }
+        function closeBusCard() { document.getElementById('bus-info-card').classList.add('translate-y-full'); }
 
         function updateCardInfo(bus) {
             document.getElementById('card-bus-name').innerText = bus.nama_bus;
@@ -235,33 +283,27 @@
             if (myLatLng) {
                 const dist = (L.latLng(myLatLng).distanceTo([bus.lat, bus.lng]) / 1000).toFixed(1);
                 document.getElementById('card-dist').innerText = dist + " km";
-                document.getElementById('card-eta').innerText = Math.round((dist / (bus.speed > 5 ? bus.speed : 25)) * 60) + " mnt";
+                const speed = bus.speed > 5 ? bus.speed : 25;
+                document.getElementById('card-eta').innerText = Math.round((dist / speed) * 60) + " mnt";
             }
         }
-
-        function closeBusCard() { document.getElementById('bus-info-card').classList.add('translate-y-full'); }
 
         function renderPassenger(p) {
             if (p.is_picked_up) {
                 if (passengerMarkers[p.id]) { map.removeLayer(passengerMarkers[p.id]); delete passengerMarkers[p.id]; }
-            } else if (!passengerMarkers[p.id]) {
-                passengerMarkers[p.id] = L.marker([p.lat, p.lng], { icon: waitIcon }).addTo(map);
+                return;
             }
+            if (!passengerMarkers[p.id]) passengerMarkers[p.id] = L.marker([p.lat, p.lng], { icon: waitIcon }).addTo(map);
         }
 
         async function iAmWaiting() {
             if (!myLatLng) return alert("GPS belum nangkep lokasi lu!");
             const { error } = await supabaseClient.from('passenger_waiting').insert({ lat: myLatLng[0], lng: myLatLng[1], is_picked_up: false });
-            
-            if (error) {
-                console.error(error);
-                alert("Gagal mengirim lokasi. Cek koneksi.");
-            } else {
-                alert("Sip! Lokasi nunggu lu udah dikirim.");
-            }
+            if (!error) alert("Sip! Posisi lu udah muncul di peta.");
         }
 
-        supabaseClient.channel('oto-v11').on('postgres_changes', { event: '*', schema: 'public', table: 'tracking_bus' }, payload => {
+        // REALTIME SYNC
+        supabaseClient.channel('oto-v12').on('postgres_changes', { event: '*', schema: 'public', table: 'tracking_bus' }, payload => {
             if (payload.new) renderBus(payload.new);
         }).on('postgres_changes', { event: '*', schema: 'public', table: 'passenger_waiting' }, payload => {
             if (payload.new) {
@@ -271,15 +313,32 @@
             }
         }).subscribe();
 
+        // MY LOCATION (TITIK BIRU)
         map.on('locationfound', (e) => {
             myLatLng = [e.latlng.lat, e.latlng.lng];
-            if (!myMarker) {
-                myMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: '#3b82f6', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(map);
-                map.setView(e.latlng, 17);
+            // HANYA tampilkan titik biru jika dia adalah PENUMPANG
+            if (userRole === 'passenger') {
+                if (!myMarker) {
+                    myMarker = L.circleMarker(e.latlng, { 
+                        radius: 8, 
+                        fillColor: '#3b82f6', 
+                        color: '#fff', 
+                        weight: 3, 
+                        fillOpacity: 1 
+                    }).addTo(map);
+                } else {
+                    myMarker.setLatLng(e.latlng);
+                }
             } else {
-                myMarker.setLatLng(e.latlng);
-                if (isFollowing) map.panTo(e.latlng);
+                // Jika statusnya berubah jadi Driver (pas login), hapus titik birunya dari peta
+                if (myMarker) {
+                    map.removeLayer(myMarker);
+                    myMarker = null;
+                }
             }
+
+            // Tetap jalankan auto-follow (untuk Driver maupun Penumpang)
+            if (isFollowing) map.panTo(e.latlng);
         });
 
         async function init() {
