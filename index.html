@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Oto Kita - Realtime Map</title>
+    <title>Oto Kita V11.1 - Fixed & Analytics</title>
 
-    <!-- Favicon Links -->
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -21,6 +20,7 @@
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; width: 100%; height: 100%; z-index: 1; background: #e5e3df; }
         .sidebar-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1500; }
         .basemap-card.active { border-color: #3b82f6; background-color: #eff6ff; color: #1e40af; }
+        #bus-info-card { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 4000; }
         .leaflet-control-container { z-index: 1000; }
     </style>
 </head>
@@ -41,7 +41,6 @@
         </div>
     </header>
 
-    <!-- SIDEBAR: Diperkecil sedikit untuk HP agar peta lebih lega -->
     <aside id="sidebar" class="sidebar-transition fixed top-16 left-0 w-[70vw] max-w-[240px] h-[calc(100%-64px)] bg-white/95 backdrop-blur-md border-r border-gray-200 shadow-2xl translate-x-0">
         <div class="p-4 space-y-6">
             <div>
@@ -56,13 +55,32 @@
                 <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">Tampilan Peta</h3>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="changeBasemap('osm')" id="btn-osm" class="basemap-card active p-2 border rounded-lg text-center font-bold text-[10px]">Google</button>
-                    <button onclick="changeBasemap('satelit')" id="btn-satelit" class="basemap-card p-2 border rounded-lg text-center font-bold text-[10px]"> Hybrid</button>
+                    <button onclick="changeBasemap('satelit')" id="btn-satelit" class="basemap-card p-2 border rounded-lg text-center font-bold text-[10px]">Hybrid</button>
                 </div>
             </div>
         </div>
     </aside>
 
     <div id="map"></div>
+
+    <!-- THUMBNAIL INFO CARD -->
+    <div id="bus-info-card" class="fixed bottom-0 left-0 right-0 p-4 translate-y-full">
+        <div class="bg-white rounded-t-3xl shadow-2xl max-w-md mx-auto p-6">
+            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4"></div>
+            <div class="flex justify-between items-start mb-4 text-slate-800">
+                <div>
+                    <h2 id="card-bus-name" class="text-2xl font-bold">Nama Bus</h2>
+                    <p class="text-green-500 text-sm font-semibold">● Live (Snapped)</p>
+                </div>
+                <button onclick="closeBusCard()" class="p-2 bg-gray-100 rounded-full"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
+            </div>
+            <div class="grid grid-cols-3 gap-2 border-t pt-4 text-center">
+                <div><p class="text-[10px] text-gray-400 font-bold uppercase">Jarak</p><p id="card-dist" class="font-bold text-blue-600">--</p></div>
+                <div><p class="text-[10px] text-gray-400 font-bold uppercase">Waktu</p><p id="card-eta" class="font-bold text-blue-600">--</p></div>
+                <div><p class="text-[10px] text-gray-400 font-bold uppercase">Laju</p><p id="card-speed" class="font-bold text-blue-600">--</p></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Right Bottom Controls -->
     <div class="absolute bottom-8 right-6 z-[1000] flex flex-col gap-3">
@@ -71,13 +89,15 @@
         </button>
     </div>
 
+    <!-- LOGIN MODAL -->
     <div id="login-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h2 class="text-xl font-bold mb-4">Mode Sopir</h2>
-            <input type="text" id="bus-name-input" placeholder="Nama Bus (ex: Sinamar 01)" class="w-full p-3 border rounded-xl mb-4 outline-none focus:ring-2 focus:ring-blue-500">
+            <h2 class="text-xl font-bold mb-4">Login Sopir</h2>
+            <input type="text" id="bus-user-input" placeholder="Username" class="w-full p-3 border rounded-xl mb-2 outline-none">
+            <input type="password" id="bus-pass-input" placeholder="Password" class="w-full p-3 border rounded-xl mb-4 outline-none">
             <div class="flex gap-2">
                 <button onclick="toggleLoginModal()" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold">Batal</button>
-                <button onclick="processLogin()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold">Mulai Narik</button>
+                <button onclick="processLogin()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold">Masuk</button>
             </div>
         </div>
     </div>
@@ -86,33 +106,24 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
+        // FIXED KEY (Menghapus kata "key" di depan)
         const SUPABASE_URL = 'https://cgkgxqpfwvnsjknrocwa.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNna2d4cXBmd3Zuc2prbnJvY3dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NzEwOTMsImV4cCI6MjEwNDI0NzA5M30.2K37gB7p3xSjsAw6c1L3kwmtT5bgTJ4ggEDcDQEfblk'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let myLatLng = null, busMarkers = {}, passengerMarkers = {}, myMarker = null, watchId = null, wakeLock = null;
-        
-        // --- SMART FOLLOW VARIABLE ---
-        let isFollowing = true; 
+        let isFollowing = true;
+        let lastPos = null, lastTime = null, speedHistory = [];
+        let passengerData = [];
 
-        // Google Streets
-        const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {maxZoom: 20,subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],attribution: '© Google Maps'});
-        // Google Hybrid (Satelit + Jalan)
-        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {maxZoom: 20,subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],attribution: '© Google Maps'});
+        // MAPS
+        const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {maxZoom: 20,subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],attribution: '© Google'});
+        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {maxZoom: 20,subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],attribution: '© Google'});
 
-        const map = L.map('map', { 
-            zoomControl: false, 
-            layers: [googleStreets], 
-            tap: false 
-        }).setView([-0.22, 100.63], 13);
-
+        const map = L.map('map', { zoomControl: false, layers: [googleStreets], tap: false }).setView([-0.22, 100.63], 13);
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
-        // --- DETEKSI JIKA USER GESER PETA MANUAL ---
-        map.on('dragstart', () => {
-            isFollowing = false;
-            console.log("Auto-follow OFF");
-        });
+        map.on('dragstart', () => { isFollowing = false; closeBusCard(); });
 
         const baseMaps = { "osm": googleStreets, "satelit": googleHybrid };
         const busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', iconSize: [35, 35], iconAnchor: [17, 17] });
@@ -122,11 +133,20 @@
         function setVh() { document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`); }
         window.addEventListener('resize', setVh); setVh();
 
-        function toggleSidebar() {
-            const sb = document.getElementById('sidebar');
-            sb.classList.toggle('-translate-x-full');
+        // --- MAP MATCHING (OSRM) ---
+        async function snapToRoad(lat, lng) {
+            try {
+                const response = await fetch(`https://router.project-osrm.org/nearest/v1/driving/${lng},${lat}?number=1`);
+                const data = await response.json();
+                if (data.waypoints && data.waypoints.length > 0) {
+                    return [data.waypoints[0].location[1], data.waypoints[0].location[0]];
+                }
+            } catch (e) { console.warn("OSRM Down, using raw GPS"); }
+            return [lat, lng];
         }
 
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
+        function toggleLoginModal() { document.getElementById('login-modal').classList.toggle('hidden'); }
         function changeBasemap(key) {
             Object.values(baseMaps).forEach(layer => map.removeLayer(layer));
             baseMaps[key].addTo(map);
@@ -134,96 +154,139 @@
             document.getElementById('btn-' + key).classList.add('active');
         }
 
-        function toggleLoginModal() { document.getElementById('login-modal').classList.toggle('hidden'); }
-
         async function processLogin() {
-            const name = document.getElementById('bus-name-input').value;
-            if(!name) return alert("Isi nama bus!");
-            document.getElementById('login-btn').classList.add('hidden');
-            document.getElementById('user-info').classList.remove('hidden');
-            document.getElementById('display-name').innerText = name;
-            toggleLoginModal();
-            startDriverTracking(name);
+            const user = document.getElementById('bus-user-input').value;
+            const pass = document.getElementById('bus-pass-input').value;
+            
+            // FEEDBACK: Beri tahu sedang loading
+            document.getElementById('display-name').innerText = "Checking...";
+            
+            const { data, error } = await supabaseClient.from('bus_accounts').select('*').eq('username', user).eq('password', pass).single();
+            
+            if (data) {
+                document.getElementById('login-btn').classList.add('hidden');
+                document.getElementById('user-info').classList.remove('hidden');
+                document.getElementById('display-name').innerText = user;
+                toggleLoginModal();
+                startDriverTracking(user);
+            } else {
+                alert("Login gagal! Cek Username/Password atau koneksi internet.");
+                document.getElementById('display-name').innerText = "Sopir";
+            }
         }
 
         function doLogout() { window.location.reload(); }
 
-        // --- SMART GO TO MY LOCATION ---
         function goToMyLocation() {
-            isFollowing = true; // Aktifkan kembali auto-follow
-            if (myLatLng) {
-                map.flyTo(myLatLng, 17); // Zoom diperjelas ke 17
-            } else {
-                map.locate({setView: true, maxZoom: 17});
-            }
+            isFollowing = true;
+            if (myLatLng) map.flyTo(myLatLng, 17);
+            else map.locate({setView: true, maxZoom: 17});
         }
 
-        // --- SMART DRIVER TRACKING ---
         async function startDriverTracking(name) {
             if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
             watchId = navigator.geolocation.watchPosition(async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                myLatLng = [latitude, longitude];
+                const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                const speed = calculateSpeed(pos);
                 
-                // Hanya panTo jika mode Following AKTIF
-                if (isFollowing) {
-                    map.panTo([latitude, longitude]);
-                }
+                passengerData.forEach(async (p) => {
+                    if (!p.is_picked_up && L.latLng([lat, lng]).distanceTo([p.lat, p.lng]) < 30) {
+                        await supabaseClient.from('passenger_waiting').update({ is_picked_up: true }).eq('id', p.id);
+                    }
+                });
 
-                await supabaseClient.from('tracking_bus').upsert({ id: 1, nama_bus: name, lat: latitude, lng: longitude, last_update: new Date() });
-            }, null, { enableHighAccuracy: true });
+                await supabaseClient.from('tracking_bus').upsert({ id: 1, nama_bus: name, lat: lat, lng: lng, speed: speed, last_update: new Date() });
+            }, (err) => console.error("GPS Error:", err), { enableHighAccuracy: true });
+        }
+
+        function calculateSpeed(pos) {
+            const hardwareSpeed = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
+            let manualSpeed = 0;
+            if (lastPos && lastTime) {
+                const dist = L.latLng(lastPos).distanceTo([pos.coords.latitude, pos.coords.longitude]);
+                manualSpeed = (dist / ((pos.timestamp - lastTime) / 1000)) * 3.6;
+            }
+            lastPos = [pos.coords.latitude, pos.coords.longitude]; lastTime = pos.timestamp;
+            let finalSpeed = hardwareSpeed > 0 ? (hardwareSpeed * 0.7 + manualSpeed * 0.3) : manualSpeed;
+            speedHistory.push(finalSpeed > 120 ? 0 : finalSpeed);
+            if (speedHistory.length > 5) speedHistory.shift();
+            return speedHistory.reduce((a, b) => a + b) / speedHistory.length;
+        }
+
+        async function renderBus(bus) {
+            const snappedCoords = await snapToRoad(bus.lat, bus.lng);
+            if (busMarkers[bus.id]) busMarkers[bus.id].setLatLng(snappedCoords);
+            else {
+                busMarkers[bus.id] = L.marker(snappedCoords, { icon: busIcon }).addTo(map);
+                busMarkers[bus.id].on('click', () => openBusCard(bus));
+            }
+            if (!document.getElementById('bus-info-card').classList.contains('translate-y-full')) updateCardInfo(bus);
+        }
+
+        function openBusCard(bus) {
+            isFollowing = false;
+            updateCardInfo(bus);
+            document.getElementById('bus-info-card').classList.remove('translate-y-full');
+        }
+
+        function updateCardInfo(bus) {
+            document.getElementById('card-bus-name').innerText = bus.nama_bus;
+            document.getElementById('card-speed').innerText = Math.round(bus.speed || 0) + " kmh";
+            if (myLatLng) {
+                const dist = (L.latLng(myLatLng).distanceTo([bus.lat, bus.lng]) / 1000).toFixed(1);
+                document.getElementById('card-dist').innerText = dist + " km";
+                document.getElementById('card-eta').innerText = Math.round((dist / (bus.speed > 5 ? bus.speed : 25)) * 60) + " mnt";
+            }
+        }
+
+        function closeBusCard() { document.getElementById('bus-info-card').classList.add('translate-y-full'); }
+
+        function renderPassenger(p) {
+            if (p.is_picked_up) {
+                if (passengerMarkers[p.id]) { map.removeLayer(passengerMarkers[p.id]); delete passengerMarkers[p.id]; }
+            } else if (!passengerMarkers[p.id]) {
+                passengerMarkers[p.id] = L.marker([p.lat, p.lng], { icon: waitIcon }).addTo(map);
+            }
         }
 
         async function iAmWaiting() {
             if (!myLatLng) return alert("GPS belum nangkep lokasi lu!");
-            const { error } = await supabaseClient.from('passenger_waiting').insert({ lat: myLatLng[0], lng: myLatLng[1] });
-            if (!error) alert("Posisi nunggu lu udah muncul di peta!");
+            const { error } = await supabaseClient.from('passenger_waiting').insert({ lat: myLatLng[0], lng: myLatLng[1], is_picked_up: false });
+            
+            if (error) {
+                console.error(error);
+                alert("Gagal mengirim lokasi. Cek koneksi.");
+            } else {
+                alert("Sip! Lokasi nunggu lu udah dikirim.");
+            }
         }
 
-        function renderBus(bus) {
-            if (busMarkers[bus.id]) busMarkers[bus.id].setLatLng([bus.lat, bus.lng]);
-            else busMarkers[bus.id] = L.marker([bus.lat, bus.lng], { icon: busIcon }).addTo(map).bindPopup(bus.nama_bus);
-        }
-
-        function renderPassenger(p) {
-            if (!passengerMarkers[p.id]) passengerMarkers[p.id] = L.marker([p.lat, p.lng], { icon: waitIcon }).addTo(map);
-        }
-
-        function zoomToBus() {
-            const ids = Object.keys(busMarkers);
-            if(ids.length > 0) {
-                isFollowing = false; // Matikan follow agar bisa liat bus
-                map.flyTo(busMarkers[ids[0]].getLatLng(), 17);
-            } else alert("Belum ada bus aktif!");
-        }
-
-        supabaseClient.channel('oto-v5').on('postgres_changes', { event: '*', schema: 'public', table: 'tracking_bus' }, payload => {
+        supabaseClient.channel('oto-v11').on('postgres_changes', { event: '*', schema: 'public', table: 'tracking_bus' }, payload => {
             if (payload.new) renderBus(payload.new);
         }).on('postgres_changes', { event: '*', schema: 'public', table: 'passenger_waiting' }, payload => {
-            if (payload.new) renderPassenger(payload.new);
+            if (payload.new) {
+                renderPassenger(payload.new);
+                const idx = passengerData.findIndex(x => x.id === payload.new.id);
+                if(idx > -1) passengerData[idx] = payload.new; else passengerData.push(payload.new);
+            }
         }).subscribe();
 
-        // --- SMART LOCATION FOUND ---
         map.on('locationfound', (e) => {
             myLatLng = [e.latlng.lat, e.latlng.lng];
             if (!myMarker) {
                 myMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: '#3b82f6', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(map);
-                map.setView(e.latlng, 16); // Hanya pertama kali buka
+                map.setView(e.latlng, 17);
             } else {
                 myMarker.setLatLng(e.latlng);
-                if (isFollowing) {
-                    map.panTo(e.latlng); // Geser halus hanya jika Following AKTIF
-                }
+                if (isFollowing) map.panTo(e.latlng);
             }
         });
 
         async function init() {
             const { data: b } = await supabaseClient.from('tracking_bus').select('*');
             if (b) b.forEach(renderBus);
-            const { data: p } = await supabaseClient.from('passenger_waiting').select('*');
-            if (p) p.forEach(renderPassenger);
-            
-            // Watch terus menerus tapi jangan paksa setView tiap detik
+            const { data: p } = await supabaseClient.from('passenger_waiting').select('*').eq('is_picked_up', false);
+            if (p) { passengerData = p; p.forEach(renderPassenger); }
             map.locate({watch: true, enableHighAccuracy: true});
         }
         init();
