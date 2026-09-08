@@ -214,6 +214,58 @@
             else map.locate({setView: true, maxZoom: 17});
         }
 
+        // --- FITUR: CARI BUS AKTIF TERDEKAT (SMART SEARCH) ---
+        function zoomToBus() {
+            const busIds = Object.keys(busMarkers);
+
+        // 1. Cek apakah ada bus yang lagi narik
+            if (busIds.length === 0) {
+                alert("Belum ada bus yang aktif saat ini, cuy! Coba lagi nanti.");
+                return;
+            }
+
+        // 2. Cek apakah lokasi kita (penumpang) sudah ketemu
+            if (!myLatLng) {
+                alert("Sabar cuy, GPS lu belum nemu lokasi. Tunggu titik biru muncul dulu!");
+                return;
+            }
+
+            let closestBusId = null;
+            let minDistance = Infinity;
+
+            // 3. LOGIKA GIS: Mencari yang terdekat
+            busIds.forEach(id => {
+                const busLatLng = busMarkers[id].getLatLng();
+                const userLatLng = L.latLng(myLatLng[0], myLatLng[1]);
+        
+                // Hitung jarak dalam meter
+                const dist = userLatLng.distanceTo(busLatLng);
+
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestBusId = id;
+                }
+            });
+
+            // 4. EKSEKUSI: Terbang ke bus terdekat
+            if (closestBusId) {
+                const targetBusMarker = busMarkers[closestBusId];
+        
+                isFollowing = false; // Matikan auto-follow biar kamera gak narik balik ke kita
+        
+                map.flyTo(targetBusMarker.getLatLng(), 17, {
+                    animate: true,
+                    duration: 1.5 // Efek terbang selama 1.5 detik
+                });
+
+                 // 5. Otomatis buka kartu info busnya biar user tau ETA-nya
+                // Kita butuh trigger click manual pada markernya
+                targetBusMarker.fire('click');
+        
+                console.log("Menemukan bus terdekat dengan jarak: " + (minDistance/1000).toFixed(2) + " km");
+            }
+        }
+
         // --- CORE LOGIC ---
         async function startDriverTracking(name) {
             if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
@@ -230,11 +282,11 @@
                         const dist = L.latLng([lat, lng]).distanceTo([p.lat, p.lng]);
                         if (dist < 25) {
                             if (!pickupTimers[p.id]) {
-                                console.log("Mulai timer 1 menit untuk penumpang: ", p.id);
+                                console.log("Mulai timer 30 detik untuk penumpang: ", p.id);
                                 pickupTimers[p.id] = setTimeout(async () => {
                                     await supabaseClient.from('passenger_waiting').update({ is_picked_up: true }).eq('id', p.id);
                                     delete pickupTimers[p.id];
-                                }, 60000); // 60 detik = 1 menit
+                                }, 30000); // 30 detik 
                             }
                         } else {
                             if (pickupTimers[p.id]) {
